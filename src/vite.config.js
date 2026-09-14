@@ -96,6 +96,14 @@ function copyRepoAssetsOnBuild() {
       for (const dir of SHIPPED_ASSET_DIRS) {
         fs.cpSync(path.join(ASSETS_ROOT, dir), path.join(destRoot, dir), { recursive: true });
       }
+      // GitHub Pages runs everything it serves through Jekyll by default —
+      // even on the Actions-based deploy path — which silently drops any
+      // top-level file/folder starting with '_' unless this marker is
+      // present. build.assetsDir below is named '_app', so without this
+      // the entire JS bundle (and, per real-world reports, sometimes the
+      // whole deploy) goes missing on GitHub Pages specifically, despite
+      // working everywhere else (local build, vite preview, any other host).
+      fs.writeFileSync(path.join(outDir, '.nojekyll'), '');
       console.log(`[copy-repo-assets-on-build] ${SHIPPED_ASSET_DIRS.join(', ')} -> ${destRoot}`);
     },
   };
