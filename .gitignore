@@ -1,0 +1,12 @@
+# dependencies
+src/node_modules/
+
+# build output
+src/dist/
+
+# local tooling state (Claude Code)
+.claude/
+
+# editor/OS
+.DS_Store
+Thumbs.db
