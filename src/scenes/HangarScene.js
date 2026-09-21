@@ -36,7 +36,7 @@ import {
 const TILE = 32;
 const PLAYER_R = 10;
 const WALL_T = TILE; // wall/railing band thickness
-const DEBUG = true;  // draw colliders + trigger zone + a HUD
+const DEBUG = false;  // draw colliders + trigger zone + a HUD
 const MECHA_SCALE = 1.3;
 
 // ---- Level 1 — Ground Floor (588x378 — a further 40% reduction from the
@@ -349,7 +349,12 @@ export class HangarScene extends Phaser.Scene {
     // this scene needs is already built above by this point (preload()'s
     // assets finish loading before Phaser ever calls create()), so the
     // video is the only thing the player is waiting on here. ----
-    playVideoOverlay(`${ASSET_BASE}/video/intro.mp4`, () => this.startOpeningSequence());
+    playVideoOverlay(`${ASSET_BASE}/video/intro.mp4`, () => {
+      // Lets the landing page (which opened this tab) restore its music
+      // volume; opener is null when the game is opened directly.
+      if (window.opener) window.opener.postMessage({ type: 'engine44-intro-finished' }, window.location.origin);
+      this.startOpeningSequence();
+    });
 
     console.log('[HangarScene] ready — spawn', L0.spawn, '| levels: level0 (control room), level1 (ground), level2 (catwalk), level3 (commander room)');
   }

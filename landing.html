@@ -1081,11 +1081,17 @@
             const whitelistBtn = document.getElementById('whitelist-btn');
             if (whitelistBtn) {
                 whitelistBtn.addEventListener('click', () => {
-                    if (bgm) bgm.pause();
+                    if (bgm) bgm.volume = 0.5;
                     if (gateSfx && !gateSfx.paused) gateSfx.pause();
                     window.open('./play/', '_blank');
                 });
             }
+
+            window.addEventListener('message', (e) => {
+                if (e.origin === window.location.origin && e.data?.type === 'engine44-intro-finished') {
+                    if (bgm) bgm.volume = 1.0;
+                }
+            });
 
             const aboutBtn = document.getElementById('about-btn');
             const aboutPage = document.getElementById('about-page');
