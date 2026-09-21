@@ -9,9 +9,10 @@
  * and this project already leans on plain DOM overlays for anything
  * text-input-shaped (see story.js's showForm) — same pattern here.
  *
- * Autoplay policy: starts muted (required for autoplay in every major
- * browser) with an explicit unmute button — never assume the browser
- * honors the `autoplay` attribute alone for a dynamically-inserted
+ * Autoplay policy: attempts unmuted playback first (best effort — browsers
+ * often block it for first-time visitors), and on NotAllowedError falls
+ * back to muted autoplay with an explicit unmute button. Never assume the
+ * browser honors the `autoplay` attribute alone for a dynamically-inserted
  * element, so `.play()` is also called directly.
  *
  * Never gets stuck: a load error (missing file, bad codec) finishes
@@ -38,7 +39,7 @@ export function playVideoOverlay(src, onDone) {
   const video = document.createElement('video');
   video.className = 'video-overlay-el';
   video.src = src;
-  video.muted = true;
+  video.muted = false;
   video.autoplay = true;
   video.playsInline = true;
   video.setAttribute('playsinline', ''); // older Safari reads the attribute, not just the property
@@ -53,8 +54,11 @@ export function playVideoOverlay(src, onDone) {
   const muteBtn = document.createElement('button');
   muteBtn.type = 'button';
   muteBtn.className = 'video-mute-btn';
-  muteBtn.textContent = '🔇 UNMUTE';
   overlay.appendChild(muteBtn);
+
+  function syncMuteBtn() {
+    muteBtn.textContent = video.muted ? '🔇 UNMUTE' : '🔊 MUTE';
+  }
 
   const loadTimer = setTimeout(finish, LOAD_TIMEOUT_MS);
 
@@ -72,12 +76,27 @@ export function playVideoOverlay(src, onDone) {
   video.addEventListener('loadedmetadata', () => clearTimeout(loadTimer));
   muteBtn.addEventListener('click', () => {
     video.muted = !video.muted;
-    muteBtn.textContent = video.muted ? '🔇 UNMUTE' : '🔊 MUTE';
+    syncMuteBtn();
   });
 
   gameEl.appendChild(overlay);
-  // belt-and-suspenders on top of the `autoplay` attribute — some browsers
-  // only honor autoplay on elements present at initial parse, not ones
-  // inserted afterward via JS.
-  video.play().catch(finish);
+  // Best effort: try unmuted first (works when the browser already trusts
+  // the origin, e.g. after a user gesture or high media-engagement score).
+  // If the browser rejects it with NotAllowedError, fall back to muted
+  // autoplay with the unmute button. Any other rejection (load/decode
+  // failure) still finishes so the caller is never left waiting.
+  // Also belt-and-suspenders on top of the `autoplay` attribute — some
+  // browsers only honor it on elements present at initial parse.
+  video.muted = false;
+  syncMuteBtn();
+  video.play().catch((err) => {
+    if (done) return;
+    if (err && err.name === 'NotAllowedError') {
+      video.muted = true;
+      syncMuteBtn();
+      video.play().catch(finish);
+    } else {
+      finish();
+    }
+  });
 }

@@ -1081,6 +1081,8 @@
             const whitelistBtn = document.getElementById('whitelist-btn');
             if (whitelistBtn) {
                 whitelistBtn.addEventListener('click', () => {
+                    if (bgm) bgm.pause();
+                    if (gateSfx && !gateSfx.paused) gateSfx.pause();
                     window.open('./play/', '_blank');
                 });
             }
