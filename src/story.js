@@ -267,6 +267,11 @@ export function createTerminalInteractable(scene, story, x, y) {
           onSubmit: () => {
             story.registrationDone = true;
             scene.toast.flash('Registration complete.');
+            // Fills the gap between "form closes" and "player re-triggers the
+            // Professor's L2 dialogue" (see resolveNpcDialogue's registrationDone
+            // branch below) — without this the banner kept showing the just-
+            // completed "Register at the Level 2 terminal" objective.
+            scene.objectiveBanner.show('Report back to the Professor on Level 2');
           },
         });
       }
