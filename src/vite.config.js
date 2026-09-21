@@ -110,12 +110,12 @@ function copyRepoAssetsOnBuild() {
 }
 
 export default defineConfig({
-  // GitHub Pages project sites (username.github.io/<repo>/, as opposed to
-  // a root username.github.io site) serve everything under a /<repo>/
-  // subpath — every runtime asset URL the game builds itself (not run
-  // through Vite's own import/HTML rewriting) has to know about this,
-  // see paths.js's ASSET_BASE (reads this back via import.meta.env.BASE_URL).
-  base: '/engine44/',
+  // The site root (/engine44/) is the static landing page; the game is
+  // served from the /play/ subfolder beneath it (see scripts/stage-site.mjs).
+  // Every runtime asset URL the game builds itself (not run through Vite's
+  // own import/HTML rewriting) has to know about this, see paths.js's
+  // ASSET_BASE (reads this back via import.meta.env.BASE_URL).
+  base: '/engine44/play/',
   plugins: [serveRepoAssets(), copyRepoAssetsOnBuild()],
   // Vite's own hashed JS/CSS output defaults to <outDir>/assets/ too —
   // same folder name our own game art copies into above. They don't

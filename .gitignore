@@ -3,6 +3,7 @@ src/node_modules/
 
 # build output
 src/dist/
+deploy/
 
 # local tooling state (Claude Code)
 .claude/

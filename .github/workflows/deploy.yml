@@ -35,14 +35,16 @@ jobs:
       - run: npm ci
         working-directory: src
 
-      - run: npm run build
+      # Builds the game, then assembles <repo>/deploy/: landing.html as the
+      # site root index.html, the game under play/.
+      - run: npm run stage
         working-directory: src
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: src/dist
+          path: deploy
 
   deploy:
     needs: build
