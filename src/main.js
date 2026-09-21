@@ -14,6 +14,13 @@ const config = {
   backgroundColor: '#101214',
   pixelArt: true,
   roundPixels: true,
+  // FIT keeps the 960x640 logical size (all UI is laid out against it) and
+  // scales the canvas to whatever #game's box is — see index.html for how
+  // that box is sized on desktop vs touch devices.
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
   scene: [HangarScene],
 };
 

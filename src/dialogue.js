@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { isTouchDevice } from './touch.js';
 
 /**
  * ENGINE 44 — dialogue system foundation.
@@ -110,7 +111,7 @@ export class DialogueBox {
     }).setOrigin(0, 0);
     this.container.add(this.bodyText);
 
-    this.continueHint = scene.add.text(this.panelW / 2 - 16, this.panelH / 2 - 14, '▼ SPACE', {
+    this.continueHint = scene.add.text(this.panelW / 2 - 16, this.panelH / 2 - 14, isTouchDevice() ? '▼ TAP' : '▼ SPACE', {
       fontFamily: 'ui-monospace, monospace',
       fontSize: '11px',
       color: '#8a8f96',

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { ASSET_BASE } from './paths.js';
+import { touchInput } from './touch.js';
 
 /**
  * The ENGINE 44 Pilot: a single 64x64 sprite (no layering), driven by
@@ -99,10 +100,10 @@ export class PilotPlayer {
   update(dt) {
     const c = this.cursors;
     const w = this.wasd;
-    const left = c.left.isDown || w.left.isDown;
-    const right = c.right.isDown || w.right.isDown;
-    const up = c.up.isDown || w.up.isDown;
-    const down = c.down.isDown || w.down.isDown;
+    const left = c.left.isDown || w.left.isDown || touchInput.left;
+    const right = c.right.isDown || w.right.isDown || touchInput.right;
+    const up = c.up.isDown || w.up.isDown || touchInput.up;
+    const down = c.down.isDown || w.down.isDown || touchInput.down;
 
     let vx = (right ? 1 : 0) - (left ? 1 : 0);
     let vy = (down ? 1 : 0) - (up ? 1 : 0);

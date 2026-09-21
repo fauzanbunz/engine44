@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ENGINE 44 — Hangar</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,12 +24,112 @@
       }
       #game {
         position: relative; /* anchors .video-overlay to the canvas's own box */
+        /* Phaser's FIT scale mode sizes the canvas to this box: up to the
+           native 960px on desktop, shrinking on narrower windows. */
+        width: min(100%, 960px);
+        aspect-ratio: 3 / 2;
       }
       #game canvas {
         image-rendering: pixelated;
-        border: 1px solid #2a2d31;
+        box-shadow: 0 0 0 1px #2a2d31; /* not a border, which would push the canvas past #game's box */
       }
       p { margin: 0; }
+
+      /* ---- touch devices (html.touch is set by touch.js: coarse pointer,
+         or ?touch=1 for testing). The game fills the viewport (Phaser FIT
+         letterboxes the fixed 3:2 canvas inside it), the page never
+         scrolls/zooms/pull-to-refreshes, and the on-screen controls show. ---- */
+      html.touch, html.touch body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html.touch #app {
+        padding: 0;
+        gap: 0;
+        height: 100vh;
+        height: 100dvh;
+        justify-content: center;
+      }
+      html.touch #game {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        aspect-ratio: auto;
+        touch-action: none;
+      }
+      html.touch #app > p { display: none; }
+
+      .rotate-hint { display: none; }
+      @media (orientation: portrait) {
+        html.touch .rotate-hint {
+          display: block;
+          position: fixed;
+          top: calc(12px + env(safe-area-inset-top, 0px));
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 11px;
+          letter-spacing: 0.06em;
+          color: #8a95a3;
+          pointer-events: none;
+        }
+      }
+
+      /* ---- on-screen touch controls (touch.js) ---- */
+      .touch-controls { display: none; }
+      html.touch .touch-controls {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 5000; /* above the canvas, below the story form (10000) and video (20000) overlays */
+        pointer-events: none; /* only the stick and button themselves take touches */
+      }
+      .tc-stick, .tc-interact {
+        position: absolute;
+        bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+        pointer-events: auto;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .tc-stick {
+        left: calc(22px + env(safe-area-inset-left, 0px));
+        width: 128px;
+        height: 128px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.07);
+        border: 2px solid rgba(255, 122, 51, 0.45);
+      }
+      .tc-knob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: rgba(255, 122, 51, 0.4);
+        border: 2px solid rgba(255, 122, 51, 0.7);
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+      .tc-interact {
+        right: calc(22px + env(safe-area-inset-right, 0px));
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 122, 51, 0.6);
+        background: rgba(255, 122, 51, 0.18);
+        color: rgba(255, 190, 150, 0.95);
+        font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.08em;
+        padding: 0;
+      }
+      .tc-interact:active { background: rgba(255, 122, 51, 0.4); }
 
       /* ---- intro/outro video overlay (video.js) — a plain <video> layered
          over the canvas, same angular-panel / rust-orange language as the
@@ -73,12 +173,12 @@
         inset: 0;
         background: rgba(5, 7, 10, 0.72);
         display: flex;
-        align-items: center;
-        justify-content: center;
+        overflow-y: auto; /* short landscape phones: let the form scroll instead of clipping */
         z-index: 10000;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .story-panel {
+        margin: auto; /* centers, but stays scrollable when taller than the viewport */
         position: relative;
         width: min(420px, 92vw);
         background: #12161c;
@@ -160,6 +260,7 @@
     </style>
   </head>
   <body>
+    <div class="rotate-hint">↻ Rotate your device for a larger view</div>
     <div id="app">
       <div id="game"></div>
       <p><strong>WASD</strong> / <strong>Arrows</strong> to move &nbsp;·&nbsp; walk into either <strong>ladder</strong> to go up or back down</p>

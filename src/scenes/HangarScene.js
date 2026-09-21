@@ -4,6 +4,7 @@ import { resolveMove } from '../worldkit.js';
 import { NpcActor, WanderController, StationaryWelder, preloadNpc, preloadWelderWelding } from '../npc.js';
 import { DialogueBox, AskIndicator } from '../dialogue.js';
 import { playVideoOverlay } from '../video.js';
+import { createTouchControls, isTouchDevice } from '../touch.js';
 import { ASSET_BASE } from '../paths.js';
 import {
   createStoryState, resolveNpcDialogue, createTerminalInteractable,
@@ -38,6 +39,30 @@ const PLAYER_R = 10;
 const WALL_T = TILE; // wall/railing band thickness
 const DEBUG = false;  // draw colliders + trigger zone + a HUD
 const MECHA_SCALE = 1.3;
+
+// Per-level control hint (top-left, always shown — independent of DEBUG).
+// `move` is swapped for the touch wording on touch devices.
+const LEVEL_HINTS = {
+  level0: 'walk into the ladder to go back up to L1',
+  level1: 'ladder up to L2 · floor hatch down to L0',
+  level2: 'east ladder down to L1 · west hatch down to L3',
+  level3: 'walk into the ladder to go back up to L2',
+  dock: 'find the Operator west along the dock',
+};
+
+// The landing page (if it opened this tab) ducks its music while the intro
+// plays and restores it on this message. Sent once, either when the intro
+// ends/is skipped or — fallback — when the tab is closed/navigated away
+// before that happened, so the landing page is never left stuck ducked.
+// pagehide (not visibilitychange) is the "tab is going away" signal:
+// visibilitychange also fires on a mere tab switch, which would restore
+// the landing music while the intro video is still playing.
+let introNotified = false;
+function notifyOpenerIntroFinished() {
+  if (introNotified) return;
+  introNotified = true;
+  if (window.opener) window.opener.postMessage({ type: 'engine44-intro-finished' }, window.location.origin);
+}
 
 // ---- Level 1 — Ground Floor (588x378 — a further 40% reduction from the
 // previous 980x630; rooms/corridors packed tighter, prop sizes unchanged) --
@@ -295,6 +320,18 @@ export class HangarScene extends Phaser.Scene {
     this._nearestInteractable = null;
     this.input.keyboard.on('keydown-SPACE', () => this.handleInteractKey());
     this.input.keyboard.on('keydown-ENTER', () => this.handleInteractKey());
+    createTouchControls(() => this.handleInteractKey());
+
+    // ---- control hint: small top-left text, always on (not part of the
+    // debug overlay). Wrapped to 224px so it stays left of the centered
+    // objective banner (which starts at x=240). Rendered by the UI camera. ----
+    this.hintText = this.add.text(8, 8, '', {
+      fontFamily: 'ui-monospace, monospace', fontSize: '10px',
+      color: '#b8bec4', backgroundColor: '#00000080', padding: { x: 5, y: 3 },
+      wordWrap: { width: 224 },
+    }).setScrollFactor(0).setDepth(1_800_000);
+    this.uiObjects.push(this.hintText);
+    this._hintLevel = null;
 
     // ---- objective banner + confirmation toast ----
     this.objectiveBanner = new ObjectiveBanner(this);
@@ -349,10 +386,10 @@ export class HangarScene extends Phaser.Scene {
     // this scene needs is already built above by this point (preload()'s
     // assets finish loading before Phaser ever calls create()), so the
     // video is the only thing the player is waiting on here. ----
+    window.addEventListener('pagehide', notifyOpenerIntroFinished);
+    window.addEventListener('beforeunload', notifyOpenerIntroFinished);
     playVideoOverlay(`${ASSET_BASE}/video/intro.mp4`, () => {
-      // Lets the landing page (which opened this tab) restore its music
-      // volume; opener is null when the game is opened directly.
-      if (window.opener) window.opener.postMessage({ type: 'engine44-intro-finished' }, window.location.origin);
+      notifyOpenerIntroFinished();
       this.startOpeningSequence();
     });
 
@@ -1453,6 +1490,12 @@ export class HangarScene extends Phaser.Scene {
 
   update(_time, delta) {
     const dt = delta / 1000;
+
+    if (this._hintLevel !== this.active) {
+      this._hintLevel = this.active;
+      const move = isTouchDevice() ? 'Stick to move' : 'WASD/Arrows to move';
+      this.hintText.setText(`${move} · ${LEVEL_HINTS[this.active] ?? ''}`);
+    }
 
     // Wanderers on each level only need to move while THAT level is the
     // active/visible one — updating their collider positions BEFORE the
