@@ -366,6 +366,13 @@ export class StoryToast {
 export function showForm(scene, { title, fields, links = [], submitLabel = 'Submit', onSubmit }) {
   scene._formOpen = true;
   scene.input.keyboard.enabled = false;
+  // `enabled = false` alone stops Phaser from acting on keys, but WASD/arrows
+  // are registered as global captures (see PilotPlayer's createCursorKeys/
+  // addKeys) — captures call event.preventDefault() at the DOM level BEFORE
+  // Phaser even checks `enabled`, which silently ate every w/a/s/d keystroke
+  // typed into the field below. disableGlobalCapture() turns that off for
+  // as long as this form is open.
+  scene.input.keyboard.disableGlobalCapture();
 
   const overlay = document.createElement('div');
   overlay.className = 'story-overlay';
@@ -447,6 +454,7 @@ export function showForm(scene, { title, fields, links = [], submitLabel = 'Subm
     window.removeEventListener('keydown', onKey);
     scene._formOpen = false;
     scene.input.keyboard.enabled = true;
+    scene.input.keyboard.enableGlobalCapture();
   }
   function onKey(e) {
     if (e.key === 'Escape') cleanup();
@@ -461,4 +469,24 @@ export function showForm(scene, { title, fields, links = [], submitLabel = 'Subm
     cleanup();
     onSubmit?.(values);
   });
+}
+
+// ---------------------------------------------------------------------
+// showEndScreen — final screen of the current story build, shown once
+// the outro video finishes/is skipped/fails to load. Same DOM-overlay
+// approach as showForm (Phaser/canvas has no easy way to lay out
+// multi-line centered text over a video element that's already gone by
+// this point anyway). Permanent — no close control, nothing plays after
+// this yet, the player just closes the tab.
+// ---------------------------------------------------------------------
+export function showEndScreen() {
+  const overlay = document.createElement('div');
+  overlay.className = 'end-overlay';
+  overlay.innerHTML = `
+    <div class="end-panel">
+      <h2>ALL SET — YOU'RE ON THE LIST</h2>
+      <p>You can close this tab now.</p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
 }

@@ -8,7 +8,7 @@ import { createTouchControls, isTouchDevice } from '../touch.js';
 import { ASSET_BASE } from '../paths.js';
 import {
   createStoryState, resolveNpcDialogue, createTerminalInteractable,
-  ObjectiveBanner, StoryToast, NPC_DIALOGUE, INTRO_LINES,
+  ObjectiveBanner, StoryToast, NPC_DIALOGUE, INTRO_LINES, showEndScreen,
 } from '../story.js';
 
 /**
@@ -1463,7 +1463,7 @@ export class HangarScene extends Phaser.Scene {
     this.toast.container.setVisible(false);
     this.cameras.main.fadeOut(2200, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      playVideoOverlay(`${ASSET_BASE}/video/outro.mp4`, () => {});
+      playVideoOverlay(`${ASSET_BASE}/video/outro.mp4`, () => showEndScreen());
     });
   }
 
